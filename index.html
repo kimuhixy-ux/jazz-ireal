@@ -146,6 +146,18 @@
   .orig li{font-size:13px; color:var(--ink-dim); padding:5px 0; border-bottom:1px dashed var(--line-soft)}
   .orig li:last-child{border-bottom:0}
 
+  .omni{
+    display:inline-flex; align-items:center; gap:7px;
+    font-family:var(--sans); font-size:13px; color:var(--ink-dim);
+    border:1px solid var(--line-soft); border-radius:8px; padding:7px 12px;
+  }
+  .omni svg{opacity:.6}
+  .omni b{color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums}
+  .omni .key-tag{
+    font-size:10.5px; font-weight:700; color:var(--brass); background:var(--brass-soft);
+    border-radius:4px; padding:2px 5px; margin-left:2px;
+  }
+
   /* ---- iReal ボタン ---- */
   .cta-wrap{
     position:sticky; bottom:0; background:linear-gradient(to top,var(--bg2) 70%,transparent);
@@ -334,6 +346,15 @@
         + s.books.map(function(b){return '<span class="book">'+bookIcon+esc(b.vol)+' <b>p.'+b.page+'</b></span>';}).join("")
         + '</div>'
       : '';
+    var omniIcon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2h10v12H3z" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>';
+    var omnibooksHtml = (s.omnibooks && s.omnibooks.length)
+      ? '<div class="d-h">Omnibook</div><div class="chips">'
+        + s.omnibooks.map(function(b){
+            var short = esc(b.book.replace(/ Omnibook.*$/,""));
+            return '<span class="omni">'+omniIcon+short+' <span class="key-tag">'+esc(b.key)+'</span> <b>p.'+b.page+'</b></span>';
+          }).join("")
+        + '</div>'
+      : '';
     var formP  = s.form===UNKNOWN  ? '<span class="unknown">不明</span>' : esc(s.form);
     var styleP = s.style===UNKNOWN ? '<span class="unknown">不明</span>' : esc(s.style);
 
@@ -349,6 +370,7 @@
       + '<div class="d-h">分類の根拠</div>'+noteHtml
       + origHtml
       + booksHtml
+      + omnibooksHtml
       + '<div class="cta-wrap">'
       +   '<a class="cta" href="'+irealURL(s.title)+'">'
       +     '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 3l11 6-11 6V3z" fill="#1A1206"/></svg>'
