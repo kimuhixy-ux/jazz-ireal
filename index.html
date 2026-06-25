@@ -219,6 +219,7 @@
   <div class="controls">
     <select id="fForm" aria-label="形式で絞り込む"></select>
     <select id="fStyle" aria-label="スタイルで絞り込む"></select>
+    <select id="fBook" aria-label="掲載書籍で絞り込む"></select>
   </div>
   <div class="tagrow" id="tagrow" aria-label="和声的特徴で絞り込む"></div>
 </header>
@@ -257,9 +258,10 @@
     var o0 = document.createElement("option"); o0.value=""; o0.textContent=label; el.appendChild(o0);
     opts.forEach(function(v){ var o=document.createElement("option"); o.value=v; o.textContent=v; el.appendChild(o); });
   }
-  var elForm=document.getElementById("fForm"), elStyle=document.getElementById("fStyle");
+  var elForm=document.getElementById("fForm"), elStyle=document.getElementById("fStyle"), elBook=document.getElementById("fBook");
   fillSelect(elForm,"形式：すべて",forms);
   fillSelect(elStyle,"スタイル：すべて",styles);
+  fillSelect(elBook,"掲載書籍：すべて",["黒本に掲載","Omnibookに掲載","Real Bookに掲載","いずれかに掲載","全カテゴリに掲載"]);
 
   var tagrow=document.getElementById("tagrow");
   var activeTags=new Set();
@@ -285,6 +287,14 @@
     }
     if(elForm.value && s.form!==elForm.value) return false;
     if(elStyle.value && s.style!==elStyle.value) return false;
+    if(elBook.value){
+      var bk=s.books&&s.books.length, om=s.omnibooks&&s.omnibooks.length, rb=s.realbooks&&s.realbooks.length;
+      if(elBook.value==="黒本に掲載"&&!bk) return false;
+      if(elBook.value==="Omnibookに掲載"&&!om) return false;
+      if(elBook.value==="Real Bookに掲載"&&!rb) return false;
+      if(elBook.value==="いずれかに掲載"&&!bk&&!om&&!rb) return false;
+      if(elBook.value==="全カテゴリに掲載"&&(!bk||!om||!rb)) return false;
+    }
     if(activeTags.size){
       // 選択したタグを「すべて」含む曲に絞る
       for(var t of activeTags){ if(s.harm.indexOf(t)===-1) return false; }
@@ -323,6 +333,7 @@
   elQ.addEventListener("input",render);
   elForm.addEventListener("change",render);
   elStyle.addEventListener("change",render);
+  elBook.addEventListener("change",render);
 
   // ---- iReal Pro 検索URL（先頭 The を外す）----
   function irealURL(title){
