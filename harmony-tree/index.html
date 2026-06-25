@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>和声ツリー・ビューア</title>
+<!-- オフラインD3（npm pack d3 で取得した v7）と、150曲のデータ。
+     どちらも <script src> で読むので file:// でも GitHub Pages でも動きます。 -->
+<script src="d3.v7.min.js"></script>
+<script src="harmony_trees.js"></script>
+<style>
+  :root{
+    --paper:#F4F2EC; --ink:#26324A; --ink-soft:#7C879B;
+    --brass:#C2922A; --brass-deep:#8E6A18; --line:#C9C6BC; --highlight:#1B6B5A;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{
+    background:var(--paper); color:var(--ink); overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+    background-image:repeating-linear-gradient(to bottom,transparent 0 31px,rgba(38,50,74,.04) 31px 32px);
+  }
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:5; padding:16px 22px 14px;
+    background:linear-gradient(to bottom,var(--paper) 72%,rgba(244,242,236,0));
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:18px 26px;
+  }
+  .titleblock{ min-width:220px; }
+  .eyebrow{ font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 4px; }
+  h1{ font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+      font-size:28px; font-weight:600; margin:0; }
+  .meta{ font-size:13px; color:var(--ink-soft); margin-top:3px; }
+  .meta b{ color:var(--ink); font-weight:600; }
+  .controls{ display:flex; flex-direction:column; gap:6px; }
+  .controls label{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+  .row{ display:flex; gap:8px; }
+  input[type=search], select{
+    font:inherit; font-size:14px; color:var(--ink); background:#fff;
+    border:1px solid var(--line); border-radius:0; padding:7px 9px;
+  }
+  input[type=search]{ width:170px; }
+  select{ width:260px; }
+  button{
+    font:inherit; font-size:14px; background:#fff; color:var(--ink);
+    border:1px solid var(--line); padding:7px 12px; cursor:pointer;
+  }
+  button:hover{ border-color:var(--ink); }
+  input:focus-visible, select:focus-visible, button:focus-visible{
+    outline:2px solid var(--highlight); outline-offset:1px;
+  }
+  .legend{ position:fixed; left:22px; bottom:18px; z-index:5; font-size:12px; color:var(--ink-soft);
+    display:flex; gap:18px; align-items:center; background:rgba(244,242,236,.85); padding:8px 12px; border:1px solid var(--line); }
+  .legend .swatch{ display:inline-flex; align-items:center; gap:7px; }
+  .legend .dot{ width:13px; height:13px; border-radius:50%; }
+  .dot.leaf{ background:var(--brass); border:1.5px solid var(--brass-deep); }
+  .dot.node{ background:#fff; border:1.5px solid var(--ink); width:11px;height:11px; }
+  .hint{ position:fixed; right:22px; bottom:18px; z-index:5; font-size:12px; color:var(--ink-soft); }
+
+  svg{ display:block; width:100vw; height:100vh; cursor:grab; }
+  svg:active{ cursor:grabbing; }
+  .link{ fill:none; stroke:var(--line); stroke-width:1.4px; }
+  .node circle{ stroke-width:1.6px; }
+  .node.internal circle{ fill:#fff; stroke:var(--ink); }
+  .node.leaf circle{ fill:var(--brass); stroke:var(--brass-deep); }
+  .label-leaf{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:12px; font-weight:600; fill:var(--brass-deep); text-anchor:middle; }
+  .label-node{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:9.5px; fill:var(--ink-soft); text-anchor:middle; }
+  .dim{ opacity:.16; }
+  .link.hot{ stroke:var(--highlight); stroke-width:2.2px; }
+  .node.hot circle{ stroke:var(--highlight); }
+  .node.hot.leaf circle{ fill:var(--highlight); stroke:var(--highlight); }
+  .node.hot .label-node{ fill:var(--highlight); }
+  @media (prefers-reduced-motion:no-preference){
+    .link{ transition:stroke .15s, stroke-width .15s, opacity .15s; }
+    .node{ transition:opacity .15s; }
+  }
+  @media (max-width:640px){ select{ width:150px; } input[type=search]{ width:110px; } h1{ font-size:22px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="titleblock">
+    <p class="eyebrow">Jazz Harmony Treebank — 150曲</p>
+    <h1 id="title">—</h1>
+    <p class="meta" id="meta"></p>
+  </div>
+  <div class="controls">
+    <label for="search">曲を選ぶ</label>
+    <div class="row">
+      <input type="search" id="search" placeholder="曲名で絞り込み" aria-label="曲名で絞り込み">
+      <select id="picker" aria-label="曲の一覧"></select>
+    </div>
+  </div>
+  <div class="controls">
+    <label>めくる</label>
+    <div class="row">
+      <button id="prev" aria-label="前の曲">‹ 前</button>
+      <button id="next" aria-label="次の曲">次 ›</button>
+    </div>
+  </div>
+</header>
+
+<div class="legend">
+  <span class="swatch"><span class="dot leaf"></span>実際に鳴るコード（葉）</span>
+  <span class="swatch"><span class="dot node"></span>構造上のまとまり（内部）</span>
+</div>
+<p class="hint">ドラッグで移動・ホイールで拡大／ノードにカーソルで支配範囲が光る</p>
+
+<svg id="canvas"></svg>
+
+<script>
+const TUNES = window.HARMONY_TREES || [];
+const dx = 44, dy = 92;
+const margin = {top:120, right:60, bottom:90, left:60};
+
+const svg = d3.select("#canvas");
+const g = svg.append("g");
+const zoom = d3.zoom().scaleExtent([0.4, 3]).on("zoom", e => g.attr("transform", e.transform));
+svg.call(zoom);
+
+let current = 0;   // いま表示している曲の添字（filtered ではなく TUNES 上の添字）
+
+function keyName(k){
+  if(!k) return "—";
+  return k === k.toLowerCase() ? k.toUpperCase()+"マイナー" : k+"メジャー";
+}
+
+function render(i){
+  const tune = TUNES[i];
+  if(!tune) return;
+  current = i;
+  document.getElementById("title").textContent = tune.title;
+  document.getElementById("meta").innerHTML =
+    `作曲 <b>${tune.composers||"—"}</b> ・ ${tune.year||""} ・ キー <b>${keyName(tune.key)}</b>`;
+  document.getElementById("picker").value = String(i);
+
+  g.selectAll("*").remove();
+
+  const root = d3.hierarchy(tune.tree, d => d.children);
+  d3.tree().nodeSize([dx, dy])(root);
+
+  let x0 = Infinity, x1 = -Infinity;
+  root.each(d => { if(d.x>x1)x1=d.x; if(d.x<x0)x0=d.x; });
+  const innerW = x1 - x0, innerH = root.height * dy;
+
+  g.append("g").selectAll("path").data(root.links()).join("path")
+    .attr("class","link").attr("d", d3.linkVertical().x(d=>d.x).y(d=>d.y));
+
+  const node = g.append("g").selectAll("g").data(root.descendants()).join("g")
+    .attr("class", d => "node " + (d.children ? "internal":"leaf"))
+    .attr("transform", d => `translate(${d.x},${d.y})`);
+
+  node.append("circle").attr("r", d => d.children?5:7)
+    .attr("tabindex",0).attr("role","img").attr("aria-label", d => d.data.label);
+  node.filter(d=>d.children).append("text").attr("class","label-node").attr("dy","-0.9em").text(d=>d.data.label);
+  node.filter(d=>!d.children).append("text").attr("class","label-leaf").attr("dy","1.9em").text(d=>d.data.label);
+
+  const links = g.selectAll(".link");
+  node.on("mouseenter", (e,d) => {
+    const fam = new Set(d.descendants());
+    node.classed("hot", n=>fam.has(n)).classed("dim", n=>!fam.has(n));
+    links.classed("hot", l=>fam.has(l.target)).classed("dim", l=>!fam.has(l.target));
+  }).on("mouseleave", () => {
+    node.classed("hot",false).classed("dim",false);
+    links.classed("hot",false).classed("dim",false);
+  });
+
+  // 画面に収める
+  const W = window.innerWidth, H = window.innerHeight;
+  const scale = Math.min((W-margin.left-margin.right)/Math.max(innerW,1),
+                         (H-margin.top-margin.bottom)/Math.max(innerH,1), 1.2);
+  const tx = W/2 - ((x0+x1)/2)*scale;
+  const ty = margin.top + 10;
+  svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+}
+
+// --- 選択メニューを作る ---
+const picker = document.getElementById("picker");
+function buildOptions(filter=""){
+  const f = filter.trim().toLowerCase();
+  picker.innerHTML = "";
+  TUNES.forEach((t, i) => {
+    if(f && !t.title.toLowerCase().includes(f)) return;
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = t.composers ? `${t.title} — ${t.composers.split(",")[0]}` : t.title;
+    picker.appendChild(opt);
+  });
+}
+buildOptions();
+
+picker.addEventListener("change", () => render(Number(picker.value)));
+document.getElementById("search").addEventListener("input", e => {
+  buildOptions(e.target.value);
+  if(picker.options.length) render(Number(picker.options[0].value));
+});
+document.getElementById("prev").addEventListener("click", () => render((current - 1 + TUNES.length) % TUNES.length));
+document.getElementById("next").addEventListener("click", () => render((current + 1) % TUNES.length));
+window.addEventListener("resize", () => render(current));
+
+// 最初は Summertime（あれば）、なければ先頭
+const start = Math.max(0, TUNES.findIndex(t => t.title === "Summertime"));
+render(start);
+</script>
+</body>
+</html>
