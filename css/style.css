@@ -22,12 +22,18 @@
     backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
     padding:14px 16px calc(12px) ; padding-top:calc(14px + env(safe-area-inset-top));
   }
-  .wordmark{display:flex; align-items:baseline; gap:9px; margin:0 0 12px}
+  .header-top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px}
+  .wordmark{display:flex; align-items:baseline; gap:9px; margin:0}
   .wordmark .mark{
     font-family:var(--display); font-weight:500; font-size:20px; letter-spacing:.2px;
   }
   .wordmark .mark em{font-style:italic; color:var(--brass)}
   .wordmark .sub{font-size:11px; color:var(--ink-mute); letter-spacing:.08em}
+  .lang-switch{
+    flex:none; font-size:12px; color:var(--ink-dim); text-decoration:none;
+    border:1px solid var(--line); border-radius:999px; padding:5px 12px; white-space:nowrap;
+  }
+  .lang-switch:hover{color:var(--brass); border-color:var(--brass)}
 
   .search{position:relative}
   .search input{
