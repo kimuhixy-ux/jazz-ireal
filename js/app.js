@@ -320,6 +320,8 @@ import { initAds } from "./ads.js";
     if (e.key === "Escape" && sheet.classList.contains("open")) closeSheet();
   });
 
+  var initialQuery = new URLSearchParams(location.search).get("q");
+  if (initialQuery) elQ.value = initialQuery;
   render();
   renderDonateLink();
   initAds();

@@ -1,6 +1,6 @@
 // sw.js: オフライン閲覧のためのService Worker
 // バージョンを上げると古いキャッシュが破棄され、新しいファイルに置き換わります。
-const CACHE_VERSION = "jazz-ireal-v3";
+const CACHE_VERSION = "jazz-ireal-v4";
 
 const PRECACHE_URLS = [
   "./",
@@ -64,6 +64,23 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
   if (new URL(request.url).origin !== location.origin) return; // iReal Pro/Spotify等の外部リンクは対象外
+
+  // 数千件の生成詳細ページはプリキャッシュしない。常に最新版を優先し、
+  // オフライン時だけ過去に閲覧したレスポンスへフォールバックする。
+  if (request.mode === "navigate" && new URL(request.url).pathname.includes("/items/")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (!response.redirected) {
+            const clone = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
