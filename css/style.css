@@ -139,6 +139,11 @@
   }
   .book svg{opacity:.6}
   .book b{color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums}
+  /* アフィリエイトリンクである旨の表示。ステマ規制対応のため常に見える大きさを保つ */
+  .pr-badge{
+    font-size:9.5px; font-weight:700; letter-spacing:.04em; color:var(--ink-mute);
+    border:1px solid var(--line); border-radius:3px; padding:1px 4px; vertical-align:middle;
+  }
   .note{font-family:var(--mincho); font-size:16px; line-height:1.95; color:var(--ink); margin:0}
   .orig{margin:0; padding:0; list-style:none}
   .orig li{font-size:13px; color:var(--ink-dim); padding:5px 0; border-bottom:1px dashed var(--line-soft)}
@@ -259,6 +264,10 @@
   .item-section h3{font-size:13px; color:var(--ink-dim); margin:16px 0 7px}
   .detail-list,.reference-list,.related-list{list-style:none; margin:0; padding:0}
   .detail-list li,.reference-list li{color:var(--ink-dim); font-size:14px; padding:6px 0; border-bottom:1px dashed var(--line-soft)}
+  .buy-link{
+    display:inline-flex; align-items:center; gap:5px; margin-left:10px;
+    color:var(--brass); font-size:12px; text-decoration:none; white-space:nowrap;
+  }
   .edition-notice{font-size:12px; color:var(--ink-mute); border-left:2px solid var(--brass-deep); padding-left:12px; margin:22px 0}
   .item-actions{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:28px 0}
   .item-actions .cta{grid-column:1/-1; padding:13px; font-size:14px}

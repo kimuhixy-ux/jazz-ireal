@@ -25,6 +25,33 @@ MAX_RELATED = 6
 RESERVED_SLUGS = {"index"}
 
 
+def load_affiliate() -> tuple[str, dict[str, str]]:
+    """アソシエイトタグと書名→検索語の対照表を js/ 側から読む。
+
+    表を Python 側にも書き写すと、片方だけ更新されて静的ページとアプリで
+    リンクの有無がずれる。js/affiliate.js を唯一の情報源にする。
+    """
+    tag_match = re.search(
+        r'AMAZON_ASSOCIATE_TAG\s*=\s*"([^"]*)"', (ROOT / "js/config.js").read_text(encoding="utf-8")
+    )
+    block = re.search(
+        r"BOOK_SEARCH_QUERIES\s*=\s*\{(.*?)\n\};", (ROOT / "js/affiliate.js").read_text(encoding="utf-8"), re.S
+    )
+    if not tag_match or not block:
+        raise ValueError("js/config.js または js/affiliate.js からアフィリエイト設定を読み取れません")
+    return tag_match.group(1), dict(re.findall(r'"([^"]+)"\s*:\s*"([^"]+)"', block.group(1)))
+
+
+ASSOCIATE_TAG, BOOK_SEARCH_QUERIES = load_affiliate()
+
+
+def amazon_link(book_key: str) -> str | None:
+    query = BOOK_SEARCH_QUERIES.get(book_key)
+    if not query or not ASSOCIATE_TAG:
+        return None
+    return f"https://www.amazon.co.jp/s?k={quote(query)}&tag={quote(ASSOCIATE_TAG)}"
+
+
 def load_songs() -> list[dict]:
     source = (ROOT / "data.js").read_text(encoding="utf-8")
     match = re.search(r"window\.SONGS\s*=\s*(\[.*\]);\s*$", source, re.S)
@@ -85,29 +112,47 @@ def list_markup(values: list[str], class_name: str = "detail-list") -> str:
     return f'<ul class="{class_name}">' + "".join(f"<li>{esc(v)}</li>" for v in values) + "</ul>"
 
 
+def reference_markup(entries: list[tuple[str, str]], english: bool) -> str:
+    """掲載位置の各行に、書名が対照表にあれば Amazon 検索リンク(PR表記付き)を添える。"""
+    items = []
+    for label, book_key in entries:
+        href = amazon_link(book_key)
+        if href:
+            aria = f"Search for {book_key} on Amazon" if english else f"{book_key}をAmazonで探す"
+            items.append(
+                f"<li>{esc(label)}"
+                f'<a class="buy-link" href="{esc(href)}" target="_blank" rel="sponsored noopener"'
+                f' aria-label="{esc(aria)}">{"Buy on Amazon" if english else "Amazonで探す"}'
+                f'<span class="pr-badge">PR</span></a></li>'
+            )
+        else:
+            items.append(f"<li>{esc(label)}</li>")
+    return '<ul class="reference-list">' + "".join(items) + "</ul>"
+
+
 def books_markup(song: dict, english: bool) -> str:
-    groups: list[tuple[str, list[str]]] = []
+    groups: list[tuple[str, list[tuple[str, str]]]] = []
     if song["books"]:
         groups.append((
             "Jazz Standard Bible (Kuro-bon)" if english else "黒本（ジャズ・スタンダード・バイブル）",
-            [f'{b.get("volEn", b["vol"]) if english else b["vol"]} — p.{b["page"]}' for b in song["books"]],
+            [(f'{b.get("volEn", b["vol"]) if english else b["vol"]} — p.{b["page"]}', b["vol"]) for b in song["books"]],
         ))
     if song["omnibooks"]:
         groups.append((
             "Omnibook",
-            [f'{b["book"]} — {b["key"]}, p.{b["page"]}' for b in song["omnibooks"]],
+            [(f'{b["book"]} — {b["key"]}, p.{b["page"]}', b["book"]) for b in song["omnibooks"]],
         ))
     if song["realbooks"]:
         groups.append((
             "Real Book",
-            [f'{b["vol"]} — p.{b["page"]}' for b in song["realbooks"]],
+            [(f'{b["vol"]} — p.{b["page"]}', b["vol"]) for b in song["realbooks"]],
         ))
     if not groups:
         message = "No page reference recorded." if english else "ページ参照の登録はありません。"
         return section("Sheet Music References" if english else "楽譜掲載位置", f"<p>{message}</p>")
     content = "".join(
-        f'<div class="reference-group"><h3>{esc(name)}</h3>{list_markup(values, "reference-list")}</div>'
-        for name, values in groups
+        f'<div class="reference-group"><h3>{esc(name)}</h3>{reference_markup(entries, english)}</div>'
+        for name, entries in groups
     )
     return section("Sheet Music References" if english else "楽譜掲載位置", content)
 

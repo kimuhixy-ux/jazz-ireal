@@ -9,8 +9,14 @@ const BOOK_SEARCH_QUERIES = {
   "Miles Davis Omnibook (E♭)": "Miles Davis Omnibook",
   "Stan Getz Omnibook (B♭)": "Stan Getz Omnibook",
   "Charlie Parker Omnibook (E♭)": "Charlie Parker Omnibook",
+  "Charlie Parker Omnibook Vol.2 (E♭)": "Charlie Parker Omnibook Volume 2",
   "Cannonball Adderley Omnibook (E♭)": "Cannonball Adderley Omnibook",
-  "Real Book Vol.1": "The Real Book Volume 1",
+  "Wynton Marsalis Omnibook (B♭)": "Wynton Marsalis Omnibook",
+  // Real Book は C/B♭/E♭ 版が別商品。当サイトのページ番号は E♭ 版準拠なので
+  // クエリに Eb を含め、版違いを買わせないようにする。
+  "Real Book Vol.1": "The Real Book Volume 1 Eb",
+  "Real Book Vol.2": "The Real Book Volume 2 Eb",
+  "Real Book Vol.3": "The Real Book Volume 3 Eb",
 };
 
 export function buildBookSearchLink(bookKey) {
