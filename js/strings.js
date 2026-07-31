@@ -37,7 +37,10 @@ export const S = {
   headingHarmonic: en ? "Harmonic Features" : "和声的特徴",
   headingClassificationNote: en ? "Classification Notes" : "分類の根拠",
   altTitlesHeading: (n) => (en ? `Alternate titles (${n})` : `元の表記（${n}件）`),
-  headingSheetMusicKurobon: en ? "Sheet Music (Jazz Standard Bible)" : "楽譜（黒本）",
+  headingSheetMusic: en ? "Sheet Music" : "楽譜",
+  subKurobon: en ? "Jazz Standard Bible" : "黒本",
+  subOmnibook: "Omnibook",
+  subRealBook: "Real Book",
 
   ctaIreal: en ? "Open in iReal Pro" : "iReal Pro で開く",
   ctaSpotify: en ? "Open in Spotify" : "Spotify で開く",

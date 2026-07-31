@@ -216,35 +216,44 @@ import { initAds } from "./ads.js";
         : "";
     var bookIcon =
       '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 3.5C2 3 2.5 2.5 3.2 2.5H8v10H3.2C2.5 12.5 2 12 2 11.5v-8zM14 3.5C14 3 13.5 2.5 12.8 2.5H8v10h4.8c.7 0 1.2-.5 1.2-1v-8z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>';
-    var booksHtml =
-      s.books && s.books.length
-        ? '<div class="d-h">' +
-          S.headingSheetMusicKurobon +
-          '</div><div class="chips">' +
-          s.books.map(function (b) { return bookChip(bookIcon, b.vol, esc(pickBookVol(b)) + " <b>p." + b.page + "</b>", pickBookVol(b)); }).join("") +
-          "</div>"
-        : "";
     var omniIcon =
       '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2h10v12H3z" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>';
-    var omnibooksHtml =
-      s.omnibooks && s.omnibooks.length
-        ? '<div class="d-h">Omnibook</div><div class="chips">' +
+    var realIcon =
+      '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2h12v12H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>';
+    var bookGroups = [];
+    if (s.books && s.books.length) {
+      bookGroups.push(
+        '<div class="book-group"><span class="book-group-label">' +
+          S.subKurobon +
+          '</span><div class="chips">' +
+          s.books.map(function (b) { return bookChip(bookIcon, b.vol, esc(pickBookVol(b)) + " <b>p." + b.page + "</b>", pickBookVol(b)); }).join("") +
+          "</div></div>"
+      );
+    }
+    if (s.omnibooks && s.omnibooks.length) {
+      bookGroups.push(
+        '<div class="book-group"><span class="book-group-label">' +
+          S.subOmnibook +
+          '</span><div class="chips">' +
           s.omnibooks
             .map(function (b) {
               var short = esc(b.book.replace(/ Omnibook.*$/, ""));
               return bookChip(omniIcon, b.book, short + ' <span class="key-tag">' + esc(b.key) + "</span> <b>p." + b.page + "</b>");
             })
             .join("") +
-          "</div>"
-        : "";
-    var realIcon =
-      '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2h12v12H2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>';
-    var realbooksHtml =
-      s.realbooks && s.realbooks.length
-        ? '<div class="d-h">Real Book</div><div class="chips">' +
+          "</div></div>"
+      );
+    }
+    if (s.realbooks && s.realbooks.length) {
+      bookGroups.push(
+        '<div class="book-group"><span class="book-group-label">' +
+          S.subRealBook +
+          '</span><div class="chips">' +
           s.realbooks.map(function (b) { return bookChip(realIcon, b.vol, esc(b.vol) + " <b>p." + b.page + "</b>"); }).join("") +
-          "</div>"
-        : "";
+          "</div></div>"
+      );
+    }
+    var booksSectionHtml = bookGroups.length ? '<div class="d-h">' + S.headingSheetMusic + "</div>" + bookGroups.join("") : "";
     var formP = s.form === UNKNOWN ? '<span class="unknown">' + S.unknownShort + "</span>" : esc(pickForm(s));
     var styleP = s.style === UNKNOWN ? '<span class="unknown">' + S.unknownShort + "</span>" : esc(pickStyle(s));
 
@@ -279,9 +288,7 @@ import { initAds } from "./ads.js";
       "</div>" +
       noteHtml +
       origHtml +
-      booksHtml +
-      omnibooksHtml +
-      realbooksHtml +
+      booksSectionHtml +
       '<div class="cta-wrap">' +
       '<a class="cta" href="' +
       irealURL(s.title) +
