@@ -181,7 +181,7 @@ import { initAds } from "./ads.js";
 
   // ---- 書籍チップ(該当すればAmazonリンク化) ----
   function bookChip(iconSvg, key, innerHtml, displayName) {
-    var href = buildBookLink(key);
+    var href = buildBookLink(key, EN);
     if (!href) {
       return '<span class="book">' + iconSvg + innerHtml + "</span>";
     }
