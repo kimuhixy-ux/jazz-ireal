@@ -14,7 +14,7 @@ const BOOK_ASINS = {
   "Stan Getz Omnibook (B♭)": "1480397423",
   "Charlie Parker Omnibook (E♭)": "", // 未確認
   "Charlie Parker Omnibook Vol.2 (E♭)": "1540021963",
-  "Cannonball Adderley Omnibook (E♭)": "", // 未確認
+  "Cannonball Adderley Omnibook (E♭)": "1495011836", // Cannonball Adderley Omnibook: For E-flat Instruments
   "Wynton Marsalis Omnibook (B♭)": "1495052451",
   "Real Book Vol.1": "0634060759", // The Real Book Vol.1 Sixth Edition for E♭
   "Real Book Vol.2": "0634060783", // The Eb Real Book vol.2 Second Edition
