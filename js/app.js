@@ -4,7 +4,6 @@ import { S } from "./strings.js";
 import { buildBookLink } from "./affiliate.js";
 import { renderDonateLink } from "./donate.js";
 import { initAds } from "./ads.js";
-import { initAnalytics } from "./analytics.js";
 
 (function () {
   "use strict";
@@ -333,7 +332,6 @@ import { initAnalytics } from "./analytics.js";
   render();
   renderDonateLink();
   initAds();
-  initAnalytics();
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {

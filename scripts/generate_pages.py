@@ -55,7 +55,6 @@ ASSOCIATE_TAG, BOOK_ASINS, BOOK_SEARCH_QUERIES = load_affiliate()
 ADSENSE_CLIENT_ID = js_const(CONFIG_JS, "ADSENSE_CLIENT_ID")
 KOFI_USERNAME = js_const(CONFIG_JS, "KOFI_USERNAME")
 ADSENSE_INARTICLE_SLOT = js_const(CONFIG_JS, "ADSENSE_INARTICLE_SLOT")
-ANALYTICS_TOKEN = js_const(CONFIG_JS, "ANALYTICS_TOKEN")
 
 
 def amazon_link(book_key: str) -> str | None:
@@ -94,17 +93,6 @@ def kofi_markup(english: bool) -> str:
     return (
         f'<p class="footer-donate"><a href="https://ko-fi.com/{quote(KOFI_USERNAME)}"'
         f' target="_blank" rel="noopener">{label}</a></p>'
-    )
-
-
-def analytics_markup() -> str:
-    """Cloudflare Web Analyticsのビーコン。Cookieを使わないので同意管理の対象外。"""
-    if not ANALYTICS_TOKEN:
-        return ""
-    token = json.dumps({"token": ANALYTICS_TOKEN}, separators=(",", ":"))
-    return (
-        '<script defer src="https://static.cloudflareinsights.com/beacon.min.js"'
-        f" data-cf-beacon='{token}'></script>"
     )
 
 
@@ -348,7 +336,6 @@ def detail_context(song: dict, slug: str, related: list[int], songs: list[dict],
         "variants_section": section("Alternate Titles / Source Listings" if english else "元の表記・別表記", variants_body),
         "books_section": books_markup(song, english),
         "ad_unit": ad_unit_markup(),
-        "analytics": analytics_markup(),
         "robots": robots_markup(song),
         "kofi": kofi_markup(english),
         "related_section": section("Related Tunes" if english else "関連曲", related_body),
@@ -398,7 +385,6 @@ def generate() -> None:
     groups = index_groups(songs, slugs)
     shared = {
         "ja_url": f"{BASE_URL}/items/", "en_url": f"{BASE_URL}/en/items/", "og_image": OG_IMAGE, "groups": groups,
-        "analytics": analytics_markup(),
     }
     write(ROOT / "items/index.html", templates["index_ja"].substitute(shared, canonical_url=shared["ja_url"], kofi=kofi_markup(False)))
     write(ROOT / "en/items/index.html", templates["index_en"].substitute(shared, canonical_url=shared["en_url"], kofi=kofi_markup(True)))
