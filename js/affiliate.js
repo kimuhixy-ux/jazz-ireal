@@ -10,7 +10,7 @@ const BOOK_ASINS = {
   "Vol.2": "4845623080", // ジャズ・スタンダード・バイブル2 in B♭
   "初版": "484561944X", // ジャズ・スタンダード・バイブル in E♭
   "John Coltrane Omnibook (B♭)": "1458422119",
-  "Miles Davis Omnibook (E♭)": "", // 手元の実物はB♭版。データの調号表記と食い違うため保留
+  "Miles Davis Omnibook (E♭)": "1480354848", // Miles Davis Omnibook: For Eb Instruments
   "Stan Getz Omnibook (B♭)": "1480397423",
   "Charlie Parker Omnibook (E♭)": "", // 未確認
   "Charlie Parker Omnibook Vol.2 (E♭)": "1540021963",
