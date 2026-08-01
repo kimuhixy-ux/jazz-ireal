@@ -1,5 +1,25 @@
-// affiliate.js: 楽譜(黒本/Omnibook/Real Book)のAmazon検索リンク生成
+// affiliate.js: 楽譜(黒本/Omnibook/Real Book)のAmazonリンク生成
 import { AMAZON_ASSOCIATE_TAG } from "./config.js";
+
+// 書名から商品ページのASINを引く対照表。
+// 検索結果ページより商品ページ直リンクの方が購入までの手数が少なく、かつ
+// 版違い(C/B♭/E♭・ハンディ版など)を誤って買われる事故も防げる。
+// ページ番号が一致する版のASINだけを入れること。未確認の本は空欄のままにすると
+// 従来どおり検索リンクにフォールバックする。
+const BOOK_ASINS = {
+  "Vol.2": "4845623080", // ジャズ・スタンダード・バイブル2 in B♭
+  "初版": "484561944X", // ジャズ・スタンダード・バイブル in E♭
+  "John Coltrane Omnibook (B♭)": "1458422119",
+  "Miles Davis Omnibook (E♭)": "", // 手元の実物はB♭版。データの調号表記と食い違うため保留
+  "Stan Getz Omnibook (B♭)": "1480397423",
+  "Charlie Parker Omnibook (E♭)": "", // 未確認
+  "Charlie Parker Omnibook Vol.2 (E♭)": "1540021963",
+  "Cannonball Adderley Omnibook (E♭)": "", // 未確認
+  "Wynton Marsalis Omnibook (B♭)": "1495052451",
+  "Real Book Vol.1": "0634060759", // The Real Book Vol.1 Sixth Edition for E♭
+  "Real Book Vol.2": "0634060783", // The Eb Real Book vol.2 Second Edition
+  "Real Book Vol.3": "1423415884", // The Eb Real Book Volume 3
+};
 
 // 黒本の巻・Omnibookの書名・Real Bookの巻から、Amazon.co.jpでの検索クエリを引く対照表
 const BOOK_SEARCH_QUERIES = {
@@ -19,8 +39,12 @@ const BOOK_SEARCH_QUERIES = {
   "Real Book Vol.3": "The Real Book Volume 3 Eb",
 };
 
-export function buildBookSearchLink(bookKey) {
+export function buildBookLink(bookKey) {
+  if (!AMAZON_ASSOCIATE_TAG) return null;
+  const tag = encodeURIComponent(AMAZON_ASSOCIATE_TAG);
+  const asin = BOOK_ASINS[bookKey];
+  if (asin) return `https://www.amazon.co.jp/dp/${encodeURIComponent(asin)}?tag=${tag}`;
   const query = BOOK_SEARCH_QUERIES[bookKey];
-  if (!query || !AMAZON_ASSOCIATE_TAG) return null;
-  return `https://www.amazon.co.jp/s?k=${encodeURIComponent(query)}&tag=${encodeURIComponent(AMAZON_ASSOCIATE_TAG)}`;
+  if (!query) return null;
+  return `https://www.amazon.co.jp/s?k=${encodeURIComponent(query)}&tag=${tag}`;
 }

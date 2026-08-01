@@ -25,31 +25,87 @@ MAX_RELATED = 6
 RESERVED_SLUGS = {"index"}
 
 
-def load_affiliate() -> tuple[str, dict[str, str]]:
-    """アソシエイトタグと書名→検索語の対照表を js/ 側から読む。
+def js_const(source: str, name: str) -> str:
+    match = re.search(rf'{name}\s*=\s*"([^"]*)"', source)
+    if match is None:
+        raise ValueError(f"js から {name} を読み取れません")
+    return match.group(1)
+
+
+def js_table(source: str, name: str) -> dict[str, str]:
+    block = re.search(rf"{name}\s*=\s*\{{(.*?)\n\}};", source, re.S)
+    if block is None:
+        raise ValueError(f"js から {name} を読み取れません")
+    return dict(re.findall(r'"([^"]+)"\s*:\s*"([^"]*)"', block.group(1)))
+
+
+def load_affiliate() -> tuple[str, dict[str, str], dict[str, str]]:
+    """アソシエイトタグ・ASIN表・検索語表を js/ 側から読む。
 
     表を Python 側にも書き写すと、片方だけ更新されて静的ページとアプリで
-    リンクの有無がずれる。js/affiliate.js を唯一の情報源にする。
+    リンク先がずれる。js/affiliate.js と js/config.js を唯一の情報源にする。
     """
-    tag_match = re.search(
-        r'AMAZON_ASSOCIATE_TAG\s*=\s*"([^"]*)"', (ROOT / "js/config.js").read_text(encoding="utf-8")
-    )
-    block = re.search(
-        r"BOOK_SEARCH_QUERIES\s*=\s*\{(.*?)\n\};", (ROOT / "js/affiliate.js").read_text(encoding="utf-8"), re.S
-    )
-    if not tag_match or not block:
-        raise ValueError("js/config.js または js/affiliate.js からアフィリエイト設定を読み取れません")
-    return tag_match.group(1), dict(re.findall(r'"([^"]+)"\s*:\s*"([^"]+)"', block.group(1)))
+    config = (ROOT / "js/config.js").read_text(encoding="utf-8")
+    affiliate = (ROOT / "js/affiliate.js").read_text(encoding="utf-8")
+    return js_const(config, "AMAZON_ASSOCIATE_TAG"), js_table(affiliate, "BOOK_ASINS"), js_table(affiliate, "BOOK_SEARCH_QUERIES")
 
 
-ASSOCIATE_TAG, BOOK_SEARCH_QUERIES = load_affiliate()
+CONFIG_JS = (ROOT / "js/config.js").read_text(encoding="utf-8")
+ASSOCIATE_TAG, BOOK_ASINS, BOOK_SEARCH_QUERIES = load_affiliate()
+ADSENSE_CLIENT_ID = js_const(CONFIG_JS, "ADSENSE_CLIENT_ID")
+KOFI_USERNAME = js_const(CONFIG_JS, "KOFI_USERNAME")
+ADSENSE_INARTICLE_SLOT = js_const(CONFIG_JS, "ADSENSE_INARTICLE_SLOT")
+ANALYTICS_TOKEN = js_const(CONFIG_JS, "ANALYTICS_TOKEN")
 
 
 def amazon_link(book_key: str) -> str | None:
+    if not ASSOCIATE_TAG:
+        return None
+    asin = BOOK_ASINS.get(book_key)
+    if asin:
+        return f"https://www.amazon.co.jp/dp/{quote(asin)}?tag={quote(ASSOCIATE_TAG)}"
     query = BOOK_SEARCH_QUERIES.get(book_key)
-    if not query or not ASSOCIATE_TAG:
+    if not query:
         return None
     return f"https://www.amazon.co.jp/s?k={quote(query)}&tag={quote(ASSOCIATE_TAG)}"
+
+
+def ad_unit_markup() -> str:
+    """楽譜セクション直後の記事内広告。スロット未設定なら自動広告のみに任せる。"""
+    if not ADSENSE_INARTICLE_SLOT or not ADSENSE_CLIENT_ID:
+        return ""
+    return (
+        '<ins class="adsbygoogle inarticle-ad" style="display:block; text-align:center"'
+        ' data-ad-layout="in-article" data-ad-format="fluid"'
+        f' data-ad-client="{esc(ADSENSE_CLIENT_ID)}" data-ad-slot="{esc(ADSENSE_INARTICLE_SLOT)}"></ins>'
+        '<script>if(location.hostname==="kimuhixy.com"){(adsbygoogle=window.adsbygoogle||[]).push({})}</script>'
+    )
+
+
+def kofi_markup(english: bool) -> str:
+    """静的ページのフッターにもKo-fiリンクを出す。
+
+    アプリ本体は donate.js が動的に差し込むが、検索流入が着地するのは静的ページ側。
+    文言は js/strings.js の kofiSupport と揃えている。
+    """
+    if not KOFI_USERNAME:
+        return ""
+    label = "☕ Support on Ko-fi" if english else "☕ Ko-fiで応援する"
+    return (
+        f'<p class="footer-donate"><a href="https://ko-fi.com/{quote(KOFI_USERNAME)}"'
+        f' target="_blank" rel="noopener">{label}</a></p>'
+    )
+
+
+def analytics_markup() -> str:
+    """Cloudflare Web Analyticsのビーコン。Cookieを使わないので同意管理の対象外。"""
+    if not ANALYTICS_TOKEN:
+        return ""
+    token = json.dumps({"token": ANALYTICS_TOKEN}, separators=(",", ":"))
+    return (
+        '<script defer src="https://static.cloudflareinsights.com/beacon.min.js"'
+        f" data-cf-beacon='{token}'></script>"
+    )
 
 
 def load_songs() -> list[dict]:
@@ -155,6 +211,22 @@ def books_markup(song: dict, english: bool) -> str:
         for name, entries in groups
     )
     return section("Sheet Music References" if english else "楽譜掲載位置", content)
+
+
+def has_references(song: dict) -> bool:
+    return bool(song["books"] or song["omnibooks"] or song["realbooks"])
+
+
+def robots_markup(song: dict) -> str:
+    """楽譜掲載位置が無い曲は noindex にする。
+
+    本文が定型文だけの薄いページが大量にあるとサイト全体の評価を下げるため、
+    掲載位置を持つ曲にクロールを集中させる。follow は残すので、これらのページ経由で
+    関連曲へのリンクはたどられる。掲載位置を追加すれば自動的にindex対象へ戻る。
+    """
+    if has_references(song):
+        return ""
+    return '<meta name="robots" content="noindex,follow">'
 
 
 def relation_keys(song: dict) -> set[str]:
@@ -275,6 +347,10 @@ def detail_context(song: dict, slug: str, related: list[int], songs: list[dict],
         "note_section": section("Analysis Notes" if english else "分類・分析メモ", f'<p class="note">{esc(note)}</p>'),
         "variants_section": section("Alternate Titles / Source Listings" if english else "元の表記・別表記", variants_body),
         "books_section": books_markup(song, english),
+        "ad_unit": ad_unit_markup(),
+        "analytics": analytics_markup(),
+        "robots": robots_markup(song),
+        "kofi": kofi_markup(english),
         "related_section": section("Related Tunes" if english else "関連曲", related_body),
         "app_url": ("../../../en/" if english else "../../") + "?q=" + quote(song["title"]),
         "ireal_url": "irealb://search?" + quote(re.sub(r"^the\s+", "", song["title"], flags=re.I)),
@@ -322,23 +398,31 @@ def generate() -> None:
     groups = index_groups(songs, slugs)
     shared = {
         "ja_url": f"{BASE_URL}/items/", "en_url": f"{BASE_URL}/en/items/", "og_image": OG_IMAGE, "groups": groups,
+        "analytics": analytics_markup(),
     }
-    write(ROOT / "items/index.html", templates["index_ja"].substitute(shared, canonical_url=shared["ja_url"]))
-    write(ROOT / "en/items/index.html", templates["index_en"].substitute(shared, canonical_url=shared["en_url"]))
+    write(ROOT / "items/index.html", templates["index_ja"].substitute(shared, canonical_url=shared["ja_url"], kofi=kofi_markup(False)))
+    write(ROOT / "en/items/index.html", templates["index_en"].substitute(shared, canonical_url=shared["en_url"], kofi=kofi_markup(True)))
 
     urls = [
         f"{BASE_URL}/", f"{BASE_URL}/en/", f"{BASE_URL}/about.html", f"{BASE_URL}/en/about.html",
         f"{BASE_URL}/privacy.html", f"{BASE_URL}/en/privacy.html", f"{BASE_URL}/harmony-tree/",
         f"{BASE_URL}/items/", f"{BASE_URL}/en/items/",
     ]
-    urls.extend(f"{BASE_URL}/items/{slug}/" for slug in slugs)
-    urls.extend(f"{BASE_URL}/en/items/{slug}/" for slug in slugs)
+    # noindex にしたページはサイトマップからも外す。両者が食い違うとSearch Consoleが
+    # 「サイトマップに登録済みだが除外」の警告を大量に出す。
+    indexable = [slug for song, slug in zip(songs, slugs) if has_references(song)]
+    urls.extend(f"{BASE_URL}/items/{slug}/" for slug in indexable)
+    urls.extend(f"{BASE_URL}/en/items/{slug}/" for slug in indexable)
     sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     sitemap += "".join(f"  <url><loc>{html.escape(url)}</loc></url>\n" for url in urls)
     sitemap += "</urlset>\n"
     write(ROOT / "sitemap.xml", sitemap)
     write(ROOT / "robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {BASE_URL}/sitemap.xml\n")
-    print(f"Generated {len(songs) * 2:,} detail pages, 2 indexes, and {len(urls):,} sitemap URLs.")
+    noindexed = len(songs) - len(indexable)
+    print(
+        f"Generated {len(songs) * 2:,} detail pages ({noindexed * 2:,} noindex), "
+        f"2 indexes, and {len(urls):,} sitemap URLs."
+    )
 
 
 if __name__ == "__main__":

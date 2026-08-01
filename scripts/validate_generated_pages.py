@@ -12,6 +12,7 @@ from urllib.parse import unquote, urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
+BASE_URL = "https://kimuhixy.com/jazz-ireal"
 EXPECTED_RECORDS = 2599
 
 
@@ -83,10 +84,24 @@ def main() -> None:
     root = ET.parse(sitemap).getroot()
     namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
     urls = [node.text for node in root.findall("s:url/s:loc", namespace)]
-    if len(urls) != EXPECTED_RECORDS * 2 + 9:
-        fail(f"sitemap URL count is {len(urls)}")
     if len(urls) != len(set(urls)):
         fail("sitemap contains duplicate URLs")
+
+    # noindex のページはサイトマップに載せない。両者が食い違うとSearch Consoleが
+    # 「サイトマップに登録済みだが除外」を大量に報告するため、突き合わせて検証する。
+    noindex = re.compile(r'<meta name="robots" content="noindex')
+    listed = set(urls)
+    for prefix, pages in (("items", ja_pages), ("en/items", en_pages)):
+        for path in pages:
+            url = f"{BASE_URL}/{prefix}/{path.parent.name}/"
+            is_noindex = bool(noindex.search(path.read_text(encoding="utf-8")))
+            if is_noindex and url in listed:
+                fail(f"{path.relative_to(ROOT)} is noindex but listed in sitemap")
+            if not is_noindex and url not in listed:
+                fail(f"{path.relative_to(ROOT)} is indexable but missing from sitemap")
+    for required_url in (f"{BASE_URL}/", f"{BASE_URL}/items/", f"{BASE_URL}/en/items/"):
+        if required_url not in listed:
+            fail(f"sitemap is missing {required_url}")
     if "Sitemap: https://kimuhixy.com/jazz-ireal/sitemap.xml" not in (ROOT / "robots.txt").read_text(encoding="utf-8"):
         fail("robots.txt does not reference sitemap.xml")
 

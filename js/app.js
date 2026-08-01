@@ -1,9 +1,10 @@
 // app.js: 一覧・検索・絞り込み・詳細シートのロジック(旧index.html内スクリプトをESモジュール化)
 import { LOCALE, ROOT } from "./i18n.js";
 import { S } from "./strings.js";
-import { buildBookSearchLink } from "./affiliate.js";
+import { buildBookLink } from "./affiliate.js";
 import { renderDonateLink } from "./donate.js";
 import { initAds } from "./ads.js";
+import { initAnalytics } from "./analytics.js";
 
 (function () {
   "use strict";
@@ -179,9 +180,9 @@ import { initAds } from "./ads.js";
     return "spotify:search:" + encodeURIComponent(String(title).trim());
   }
 
-  // ---- 書籍チップ(該当すればAmazon検索リンク化) ----
+  // ---- 書籍チップ(該当すればAmazonリンク化) ----
   function bookChip(iconSvg, key, innerHtml, displayName) {
-    var href = buildBookSearchLink(key);
+    var href = buildBookLink(key);
     if (!href) {
       return '<span class="book">' + iconSvg + innerHtml + "</span>";
     }
@@ -332,6 +333,7 @@ import { initAds } from "./ads.js";
   render();
   renderDonateLink();
   initAds();
+  initAnalytics();
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () {

@@ -1,6 +1,6 @@
 // sw.js: オフライン閲覧のためのService Worker
 // バージョンを上げると古いキャッシュが破棄され、新しいファイルに置き換わります。
-const CACHE_VERSION = "jazz-ireal-v7";
+const CACHE_VERSION = "jazz-ireal-v8";
 
 const PRECACHE_URLS = [
   "./",
@@ -20,6 +20,7 @@ const PRECACHE_URLS = [
   "./js/donate.js",
   "./js/ads.js",
   "./js/affiliate.js",
+  "./js/analytics.js",
   "./data.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
