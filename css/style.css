@@ -185,6 +185,11 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   a.cta:active{transform:translateY(1px)}
+  .cta-key{
+    grid-column:1/-1; display:flex; justify-content:center; gap:14px; flex-wrap:wrap;
+    font-size:12.5px; color:var(--ink-dim);
+  }
+  .cta-key b{color:var(--brass); font-weight:700; margin-left:4px}
   a.cta-spotify{
     display:flex; align-items:center; justify-content:center; gap:7px;
     width:100%; font-family:var(--sans); font-weight:700; font-size:13.5px;

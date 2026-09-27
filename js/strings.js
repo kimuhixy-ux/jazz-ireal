@@ -44,6 +44,9 @@ export const S = {
 
   ctaIreal: en ? "Open in iReal Pro" : "iReal Pro で開く",
   ctaSpotify: en ? "Open in Spotify" : "Spotify で開く",
+  keyConcert: en ? "Concert" : "原曲",
+  keyAlto: en ? "Alto" : "アルト",
+  keyTenor: en ? "Tenor" : "テナー",
   ctaFootHtml: en
     ? 'If the app doesn\'t open, visit <a href="https://www.irealpro.com" target="_blank" rel="noopener">irealpro.com</a>'
     : 'アプリが開かない場合は <a href="https://www.irealpro.com" target="_blank" rel="noopener">irealpro.com</a>',

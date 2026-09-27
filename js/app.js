@@ -175,6 +175,33 @@ import { initAds } from "./ads.js";
     return "irealb://search?" + encodeURIComponent(q);
   }
 
+  // ---- サックス用のキー(data.js の key は iReal Pro 表記のコンサートキー。"-" は短調) ----
+  const PITCH_CLASS = { C: 0, "C#": 1, Db: 1, D: 2, Eb: 3, E: 4, F: 5, "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8, A: 9, Bb: 10, B: 11 };
+  // 調号の少ない書き方を選ぶため、長調と短調で異名同音の選び方を変える(例: 長調はD♭、短調はC♯m)
+  const MAJOR_NAMES = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"];
+  const MINOR_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"];
+  const ALTO_SHIFT = 9; // E♭管: 記譜は実音の長6度上
+  const TENOR_SHIFT = 2; // B♭管: 記譜は実音の長9度上(オクターブを除くと長2度)
+
+  function keyName(key, shift) {
+    const minor = key.endsWith("-");
+    const pc = PITCH_CLASS[minor ? key.slice(0, -1) : key];
+    if (pc === undefined) return "";
+    const i = (pc + shift) % 12;
+    return minor ? MINOR_NAMES[i] + "m" : MAJOR_NAMES[i];
+  }
+
+  function saxKeyHtml(s) {
+    if (!s.key || !keyName(s.key, 0)) return "";
+    return (
+      '<div class="cta-key">' +
+      "<span>" + S.keyConcert + "<b>" + keyName(s.key, 0) + "</b></span>" +
+      "<span>" + S.keyAlto + "<b>" + keyName(s.key, ALTO_SHIFT) + "</b></span>" +
+      "<span>" + S.keyTenor + "<b>" + keyName(s.key, TENOR_SHIFT) + "</b></span>" +
+      "</div>"
+    );
+  }
+
   function spotifyURL(title) {
     return "spotify:search:" + encodeURIComponent(String(title).trim());
   }
@@ -290,6 +317,7 @@ import { initAds } from "./ads.js";
       origHtml +
       booksSectionHtml +
       '<div class="cta-wrap">' +
+      saxKeyHtml(s) +
       '<a class="cta" href="' +
       irealURL(s.title) +
       '">' +
