@@ -1,6 +1,6 @@
 // sw.js: オフライン閲覧のためのService Worker
 // バージョンを上げると古いキャッシュが破棄され、新しいファイルに置き換わります。
-const CACHE_VERSION = "jazz-ireal-v13";
+const CACHE_VERSION = "jazz-ireal-v14";
 
 const PRECACHE_URLS = [
   "./",
@@ -33,7 +33,9 @@ async function precache(cache, urls) {
   await Promise.all(
     urls.map(async (url) => {
       try {
-        const response = await fetch(url);
+        // ブラウザのHTTPキャッシュ(GitHub Pagesは最大10分)を経由すると、
+        // 新バージョンのキャッシュに旧版のJSが混ざり、import先の食い違いで画面が動かなくなるため必ず取り直す
+        const response = await fetch(url, { cache: "reload" });
         if (response.ok && !response.redirected) {
           await cache.put(url, response);
         }
