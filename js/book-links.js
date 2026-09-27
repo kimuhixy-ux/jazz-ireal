@@ -1,4 +1,5 @@
-// affiliate.js: 楽譜(黒本/Omnibook/Real Book)のAmazonリンク生成
+// book-links.js: 楽譜(黒本/Omnibook/Real Book)のAmazonリンク生成
+// ファイル名に "affiliate" を含めると広告ブロッカーに読み込みを遮断され、app.js ごと動かなくなるため避けている。
 import { AMAZON_ASSOCIATE_TAG, AMAZON_US_ASSOCIATE_TAG } from "./config.js";
 
 // 書名から商品ページのASINを引く対照表。

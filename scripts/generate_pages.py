@@ -50,9 +50,9 @@ def load_affiliate() -> tuple[dict[str, str], dict[str, str], set[str]]:
     """ASIN表・検索語表・国内限定書籍を js/ 側から読む。
 
     表を Python 側にも書き写すと、片方だけ更新されて静的ページとアプリで
-    リンク先がずれる。js/affiliate.js と js/config.js を唯一の情報源にする。
+    リンク先がずれる。js/book-links.js と js/config.js を唯一の情報源にする。
     """
-    affiliate = (ROOT / "js/affiliate.js").read_text(encoding="utf-8")
+    affiliate = (ROOT / "js/book-links.js").read_text(encoding="utf-8")
     return (
         js_table(affiliate, "BOOK_ASINS"),
         js_table(affiliate, "BOOK_SEARCH_QUERIES"),
@@ -103,7 +103,7 @@ BOOK_SLUGS = {book["key"]: book["slug"] for book in BOOKS}
 
 
 def amazon_link(book_key: str, english: bool) -> str | None:
-    """js/affiliate.js の buildBookLink と同じ規則でリンクを組み立てる。"""
+    """js/book-links.js の buildBookLink と同じ規則でリンクを組み立てる。"""
     if english and book_key not in JP_ONLY_BOOKS:
         host, tag = "https://www.amazon.com", US_ASSOCIATE_TAG
     else:

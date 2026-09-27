@@ -1,7 +1,7 @@
 // app.js: 一覧・検索・絞り込み・詳細シートのロジック(旧index.html内スクリプトをESモジュール化)
 import { LOCALE, ROOT } from "./i18n.js";
 import { S } from "./strings.js";
-import { buildBookLink } from "./affiliate.js";
+import { buildBookLink } from "./book-links.js";
 import { renderDonateLink } from "./donate.js";
 import { initAds } from "./ads.js";
 
