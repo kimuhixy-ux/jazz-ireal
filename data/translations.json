@@ -35,7 +35,9 @@
     "トライトーン代理": "Tritone Substitution",
     "バックドアii-V": "Backdoor ii–V",
     "12小節ブルース": "12-bar Blues",
-    "モーダル": "Modal"
+    "モーダル": "Modal",
+    "循環": "Cycle (I–VI–ii–V)",
+    "逆循環": "Reverse Cycle (ii–V–I–VI)"
   },
   "bookVol": {
     "Vol.2": "Vol. 2",
